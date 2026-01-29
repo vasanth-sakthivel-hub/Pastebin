@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pastebin</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+        .navbar {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 40px;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+        .form {
+            width: 700px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 250px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+        .row input {
+            flex: 1;
+        }
+        button {
+            padding: 12px 25px;
+            border: none;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #result {
+            margin-top: 20px;
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+        #result a {
+            color: #155724;
+            font-weight: bold;
+            word-break: break-all;
+        }
+        #error {
+            margin-top: 20px;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <h2>PasteBin</h2>
+</div>
+
+<div class="container">
+    <div class="form">
+        <h3>Create a New Paste</h3>
+
+        <textarea id="content" placeholder="Paste your text here..." required></textarea>
+
+        <div class="row">
+            <input type="number" id="ttl_seconds" placeholder="TTL in seconds (optional)" min="1">
+            <input type="number" id="max_views" placeholder="Max views (optional)" min="1">
+        </div>
+
+        <button onclick="createPaste()">Create Paste</button>
+
+        <div id="result">
+            <b>✓ Paste Created Successfully!</b><br>
+            Share this link: <a id="pasteUrl" href="#" target="_blank"></a>
+        </div>
+
+        <div id="error"></div>
+    </div>
+</div>
+
+<script>
+    function createPaste() {
+        const content = document.getElementById("content").value.trim();
+        const ttl = document.getElementById("ttl_seconds").value;
+        const maxViews = document.getElementById("max_views").value;
+
+        if (!content) {
+            showError("Content cannot be empty!");
+            return;
+        }
+
+        const body = { content };
+        if (ttl) body.ttl_seconds = parseInt(ttl);
+        if (maxViews) body.max_views = parseInt(maxViews);
+
+        fetch("/api/pastes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                showError(data.error);
+            } else {
+                showSuccess(data.url);
+            }
+        })
+        .catch(err => {
+            showError("Failed to create paste: " + err.message);
+        });
+    }
+
+    function showSuccess(url) {
+        document.getElementById("error").style.display = "none";
+        document.getElementById("result").style.display = "block";
+        document.getElementById("pasteUrl").href = url;
+        document.getElementById("pasteUrl").textContent = url;
+    }
+
+    function showError(msg) {
+        document.getElementById("result").style.display = "none";
+        document.getElementById("error").style.display = "block";
+        document.getElementById("error").textContent = msg;
+    }
+</script>
+</body>
+</html>
